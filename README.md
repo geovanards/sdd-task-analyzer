@@ -1,7 +1,8 @@
 # sdd-task-analyzer — TaskAnalyzer
 > **Bootcamp III** — Fase 2: Implementação com IA, Test Harness e Versionamento no GitHub
-> **Estudante:** Geovana Rodrigues Paz Cruz
+> **Aluno:** Geovana Rodrigues Paz Cruz
 > **Curso:** Ciência da Computação
+
 
 ## Visão geral
 
