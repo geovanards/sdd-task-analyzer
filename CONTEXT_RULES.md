@@ -1,67 +1,82 @@
-# CONTEXT_RULES — TaskAnalyzer (SDD)
+# CONTEXT_RULES — TaskAnalyzer
 
-Você é um assistente de codificação. A fonte da verdade é `specs/task_analyzer_spec.md`.
-Estas regras foram transpostas da Fase 1 (seção 3 da Especificação SDD) e devem ser
-fornecidas ao agente de IA no início de **toda** sessão.
+Regras de governança de contexto para agentes de IA. Este arquivo deve ser fornecido ao agente de IA, junto com `specs/task_analyzer_spec.md`, em **toda** interação de geração de código.
 
-## Obrigatório
-
-- Python 3.11+; type hints em tudo; PEP 8; SRP; docstrings Google style.
-- Exceções específicas: `DatasInvalidasError`, `SemTarefasConcluidasError`, `ValorEnumInvalidoError`
-  (todas derivadas de `TaskAnalyzerError`; erros de entrada derivam de `TaskValidationError`).
-- Logging com o módulo `logging` (WARNING para descartes, ERROR antes de exceções).
-- Datas sempre `datetime` UTC timezone-aware; arredondar com `round(x, 2)`.
-
-## Proibido
-
-- Bibliotecas externas; persistência; alterar assinaturas públicas; alterar testes;
-  alterar a estrutura de pastas; assumir comportamento não especificado; usar `print`.
-
-## Fluxo
-
-1. Leia a spec. 2. Resuma as regras. 3. Gere código + testes. 4. Rode `pytest -q`.
-5. Explique decisões. 6. Aguarde homologação humana antes de qualquer commit.
-
----
+> Origem: Seções 3 e 4 da Especificação SDD — TaskAnalyzer (Fase 1), alinhadas à versão 1.2 da especificação (Fase 3: CI/CD e Docker).
 
 ## 1. Diretrizes Arquiteturais (Obrigatórias)
 
-| ID | Diretriz |
-|----|----------|
-| DA-01 | Python 3.11 ou superior como versão mínima obrigatória (uso de `X \| None` e `dataclasses`). |
-| DA-02 | Type hints em todas as funções, métodos, parâmetros e retornos. |
-| DA-03 | Seguir o princípio Single Responsibility (SRP) e código limpo conforme PEP 8. |
-| DA-04 | Docstrings no padrão Google style para módulo, classes, funções e parâmetros. |
-| DA-05 | Funções pequenas, coesas e com um único propósito (máximo sugerido: 25 linhas). |
-| DA-06 | Tratamento de exceções específico, com hierarquia própria e mensagens claras (spec, seção 1.3.4). |
-| DA-07 | Logs estruturados com o módulo padrão `logging` (nunca `print`). |
-| DA-08 | Código legível, com nomes descritivos em português para o domínio (ex.: `calcular_tempo_conclusao_min`). |
-| DA-09 | Apenas biblioteca padrão do Python em `src/`. Em `tests/`, apenas `pytest` (e `pytest-cov`, se autorizado). |
-| DA-10 | Separar responsabilidades: validação, cálculo por tarefa e agregação em funções distintas. |
+- Utilizar Python 3.12 ou superior.
+- Utilizar type hints (anotações de tipo) em todas as funções, métodos e parâmetros.
+- Seguir o princípio Single Responsibility (SRP) e as boas práticas de Clean Code / PEP 8.
+- Documentar todo o código no padrão Google Style Docstrings (módulos, classes, funções e parâmetros).
+- Funções devem ser pequenas, coesas e com um único propósito.
+- Tratamento de exceções específico, com mensagens claras e acionáveis (nunca `except: pass`).
+- Logs estruturados utilizando o módulo padrão `logging` (sem `print()` para depuração).
+- Código legível, de fácil manutenção, com nomes de variáveis e funções descritivos (evitar abreviações ambíguas).
 
 ## 2. Proibições Explícitas (Regras Restritivas)
 
-| ID | Proibição |
-|----|-----------|
-| PR-01 | Não utilizar bibliotecas externas não autorizadas (pandas, numpy, dateutil, etc.). |
-| PR-02 | Não alterar, remover ou adaptar os cenários de teste fornecidos. |
-| PR-03 | Não modificar a estrutura de pastas definida na spec (seção 4.1). |
-| PR-04 | Não persistir dados em arquivos ou bancos de dados. |
-| PR-05 | Não alterar a assinatura (nome e parâmetros) das funções públicas sem autorização. |
-| PR-06 | Não gerar código sem testes correspondentes para as novas funcionalidades. |
-| PR-07 | Não inserir código duplicado ou sem necessidade. |
-| PR-08 | Não assumir comportamentos não especificados no contrato de negócio. |
-| PR-09 | Não comentar código em excesso (apenas o necessário); a docstring é a documentação. |
-| PR-10 | Não retornar valores diferentes do contrato definido (ex.: `dict` no lugar de `RelatorioMetricas`). |
-| PR-11 | Não usar `datetime.now()` ou qualquer fonte de tempo do sistema dentro do módulo. |
+- Não utilizar bibliotecas externas não autorizadas: o código em `src/` usa somente a biblioteca padrão do Python. O `pytest` é autorizado exclusivamente para os testes (listado em `requirements.txt`) e o `bandit` exclusivamente para a análise de segurança no pipeline de CI (instalado apenas no workflow, nunca em `src/`).
+- Não alterar, remover ou adaptar os cenários de teste definidos na Seção 2 de `specs/task_analyzer_spec.md`.
+- Não modificar a estrutura de pastas definida na Seção 4 deste arquivo.
+- Não persistir dados em arquivos ou bancos de dados nesta fase.
+- Não alterar a assinatura (nome, parâmetros e tipos) das funções públicas definidas no contrato sem autorização.
+- Não gerar código sem os testes automatizados correspondentes para novas funcionalidades.
+- Não inserir código duplicado ou desnecessário (evitar redundância).
+- Não assumir comportamentos não especificados no contrato de negócio — em caso de ambiguidade, a IA deve sinalizar a lacuna em vez de "inventar" uma regra.
 
 ## 3. Regras de Interação com a IA
 
-| ID | Regra |
-|----|-------|
-| RI-01 | Fornecer sempre o contexto completo (spec e este arquivo) antes de qualquer solicitação. |
-| RI-02 | Validar se a IA compreendeu o contrato antes de gerar código (pedir um resumo das regras). |
-| RI-03 | Solicitar explicações e justificativas quando houver dúvidas na solução gerada. |
-| RI-04 | Revisar criticamente todo código gerado; a IA é executora, o desenvolvedor é o homologador. |
-| RI-05 | Rejeitar respostas que violem as proibições ou o contrato e registrar o motivo no PR. |
-| RI-06 | Registrar no `README.md` quais trechos foram gerados por IA e quais foram revisados/ajustados. |
+- Sempre fornecer o contexto completo (`specs/task_analyzer_spec.md` + `CONTEXT_RULES.md`) antes de solicitar geração de código.
+- Validar se a IA compreendeu o contrato de negócio antes de aceitar o código gerado.
+- Solicitar explicações quando houver dúvida sobre a solução proposta pela IA.
+- Revisar criticamente todo código gerado antes de aceitar (homologação humana — ver Seção 6).
+- Rejeitar respostas que violem qualquer proibição listada na Seção 2.
+
+## 4. Estrutura de Pastas do Repositório (fixa)
+
+```
+sdd-taskanalyzer/
+├── .github/
+│   └── workflows/
+│       └── ci.yml            # Pipeline de CI/CD (GitHub Actions)
+├── Dockerfile                # Empacotamento: imagem isolada do Test Harness
+├── docker-compose.yml        # Orquestração: suíte de testes com um único comando
+├── .dockerignore             # Arquivos excluídos da imagem Docker
+├── pytest.ini                # Configuração do pytest (raiz no sys.path)
+├── README.md                 # Visão geral do projeto no GitHub
+├── CONTEXT_RULES.md          # Regras persistentes para os agentes de IA
+├── .gitignore                # Arquivos e pastas ignorados pelo Git
+├── requirements.txt          # Dependências do projeto (pytest)
+├── specs/
+│   └── task_analyzer_spec.md # Especificação SDD (contrato)
+├── tests/
+│   ├── conftest.py           # Fixtures compartilhadas dos testes
+│   └── test_harness.py       # Testes automatizados (pytest) dos cenários de aceite
+└── src/
+    └── task_analyzer.py      # Código-fonte gerado por IA e homologado por humano
+```
+
+Qualquer necessidade de alteração deve ser justificada e registrada como nova versão da especificação.
+
+## 5. Regras de Integração e Entrega Contínua (CI/CD)
+
+- Todo push e Pull Request nas branches `main` e `develop` dispara o pipeline `.github/workflows/ci.yml`.
+- Nenhum Pull Request pode ser integrado com o pipeline vermelho: um teste quebrado interrompe a esteira e bloqueia o merge (proteção de branch).
+- O pipeline executa o Test Harness sem alterações, valida o código em Python 3.11 (referência do enunciado) e 3.12 (mínimo destas regras) e executa a análise de segurança com Bandit.
+- A imagem Docker deve partir de uma imagem oficial e leve do Python (`python:3.12-slim`), executar como usuário sem privilégios de administrador e conter apenas o necessário para os testes (ver `.dockerignore`).
+- É proibido versionar segredos, tokens ou credenciais no repositório, no `Dockerfile` ou no workflow.
+- Alterações em `ci.yml`, `Dockerfile` ou `docker-compose.yml` seguem o mesmo fluxo de Pull Request e revisão humana do código-fonte.
+
+## 6. Plano de Homologação Humana
+
+Todo código gerado pela IA é submetido a revisão crítica humana antes de ser aceito e versionado:
+
+1. Execução completa dos testes automatizados (pytest), localmente e no pipeline de CI, para validação funcional de todos os cenários.
+2. Revisão de conformidade com o contrato de negócio (`specs/task_analyzer_spec.md`) e com estas regras de contexto.
+3. Análise de qualidade do código: legibilidade, tratamento de erros, aderência ao PEP 8 e aos padrões definidos.
+4. Testes manuais complementares em casos de borda não cobertos automaticamente.
+5. Aprovação e commit: somente após a aprovação nos quatro passos anteriores o código é comitado no repositório.
+
+A IA é uma ferramenta produtiva no desenvolvimento, mas a decisão final e a responsabilidade técnica permanecem sempre humanas.

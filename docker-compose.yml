@@ -1,0 +1,7 @@
+# Orquestração local: toda a suíte de testes com um único comando
+#   docker compose run --rm tests
+services:
+  tests:
+    build: .
+    image: sdd-taskanalyzer:latest
+    container_name: sdd-taskanalyzer-tests
