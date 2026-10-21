@@ -1,0 +1,83 @@
+# Pipeline de Integração Contínua do TaskAnalyzer (Fase 3)
+# Gatilhos: push e pull request nas branches main e develop.
+# Um teste quebrado deixa o build vermelho e, com a proteção de branch
+# ativada, impede o merge do Pull Request.
+
+name: CI - TaskAnalyzer
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  testes:
+    name: Test Harness (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.11: ambiente de referência do enunciado da Fase 3
+        # 3.12: versão mínima exigida pelo CONTEXT_RULES.md
+        python-version: ["3.11", "3.12"]
+    steps:
+      - name: Baixar o código (checkout)
+        uses: actions/checkout@v4
+
+      - name: Configurar Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Instalar dependências (requirements.txt)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Executar o Test Harness
+        run: pytest tests/test_harness.py -v
+
+  seguranca:
+    name: Análise de segurança (Bandit)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar o código (checkout)
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar Bandit (somente no pipeline)
+        run: pip install bandit
+
+      - name: Analisar src/ em busca de vulnerabilidades
+        run: bandit -r src --severity-level medium
+
+  docker:
+    name: Build e testes no contêiner Docker
+    runs-on: ubuntu-latest
+    needs: [testes, seguranca]
+    steps:
+      - name: Baixar o código (checkout)
+        uses: actions/checkout@v4
+
+      - name: Construir a imagem (docker build)
+        run: docker build -t sdd-taskanalyzer:ci .
+
+      - name: Executar a suíte no contêiner (docker run)
+        run: docker run --rm sdd-taskanalyzer:ci
+
+      - name: Executar via Docker Compose
+        run: docker compose run --rm tests
