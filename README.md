@@ -1,5 +1,5 @@
 # sdd-task-analyzer — TaskAnalyzer
-> **Bootcamp III** — Fase 2: Implementação com IA, Test Harness e Versionamento no GitHub
+> **Bootcamp III** - ENTREGA 2(INTERMEDIÁRIA) E 3(FINAL)
 > **Aluno:** Geovana Rodrigues Paz Cruz
 > **Curso:** Ciência da Computação
 
@@ -20,18 +20,48 @@ O código foi gerado com assistente de IA guiado por `CONTEXT_RULES.md` e pelo c
 
 ```
 sdd-task-analyzer/
-├── README.md                 # Este arquivo: visão geral, execução e status do build
-├── CONTEXT_RULES.md          # Regras de governança da IA (transpostas da Fase 1)
-├── .gitignore                # __pycache__/, .pytest_cache/, venv/ etc.
-├── requirements.txt          # Dependências autorizadas (pytest)
+├── .github/
+│   └── workflows/
+│       └── ci.yml                  # Pipeline de CI/CD (GitHub Actions)
+├── Dockerfile                      # Empacotamento isolado (python:3.11-slim)
+├── docker-compose.yml              # Orquestração local dos testes em contêiner
+├── .dockerignore                   # Arquivos ignorados no build da imagem Docker
+├── README.md                       # Visão geral, arquitetura, execução e governança
+├── CONTEXT_RULES.md                # Regras de governança e restrições da IA (Fase 1)
+├── .gitignore                      # __pycache__/, .pytest_cache/, venv/ etc.
+├── requirements.txt                # Dependências estritas autorizadas (pytest, bandit)
 ├── specs/
-│   └── task_analyzer_spec.md # Contrato SDD (Fase 1 + adendo Fase 2)
+│   └── task_analyzer_spec.md       # Contrato SDD (Fase 1 + adendo Fase 2)
 ├── tests/
-│   └── test_harness.py       # Test Harness com pytest (Cenários 1, 2 e casos de borda)
+│   └── test_harness.py             # Suíte de testes automatizados (Cenários 1 a 7)
 └── src/
-    └── task_analyzer.py      # Código gerado via IA e homologado
+    └── task_analyzer.py            # Código gerado via IA e homologado por humano
 ```
+---
 
+## Arquitetura da confiança
+
+| Pilar | Artefato | Função |
+|---|---|---|
+| **Motor CI/CD** | `.github/workflows/ci.yml` | Executa testes automatizados, auditoria de segurança e validação a cada `push` e `Pull Request` |
+| **Empacotamento** | `Dockerfile` | Imagem isolada, leve e imutável (`python:3.11-slim`), eliminando o *"na minha máquina funciona"* |
+| **Orquestração** | `docker-compose.yml` | Executa toda a suíte de testes isolada com um único comando padronizado |
+| **Governança SDD** | `CONTEXT_RULES.md` + `specs/` | Regras de contenção para a IA e contrato formal de negócio (Fase 1 + adendo Fase 2) |
+| **Qualidade (QA)** | `tests/test_harness.py` | Test Harness em `pytest` cobrindo os cenários nominais, erros e casos de borda |
+| **Código Homologado** | `src/task_analyzer.py` | Implementação gerada por IA e auditada por inspeção humana (*Critical-in-the-Loop*) |
+
+---
+
+## Pipeline de CI/CD (GitHub Actions)
+
+**Gatilhos:** Eventos de `push` e `pull_request` nas branches `main` e `develop`.
+
+```text
+push / pull request (main, develop)
+        │
+        ├──► Job 1: Test Harness (ubuntu-latest | Python 3.11) ──┐
+        ├──► Job 2: Segurança SAST (Bandit em src/)            ──┼──► Build & Container Check (Docker)
+        └──► Contrato Inquebrável (100% Passed obrigatório)    ──┘
 ## Como executar
 
 Pré-requisitos: Python 3.11+ e Git.
